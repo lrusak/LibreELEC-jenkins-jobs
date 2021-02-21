@@ -1,0 +1,127 @@
+pipelineJob('@NAME@') {
+
+  description('@NAME@ Build Job')
+
+  disabled(false)
+
+  environmentVariables {
+    env('PROJECT', '@PROJECT@')
+    env('DEVICE', '@DEVICE@')
+    env('ARCH', '@ARCH@')
+  }
+
+  properties {
+
+    disableConcurrentBuilds()
+
+    rebuild {
+      autoRebuild(true)
+      rebuildDisabled(false)
+    }
+
+    buildDiscarder {
+      strategy {
+        logRotator {
+          daysToKeepStr('7')
+          numToKeepStr('7')
+          artifactDaysToKeepStr('')
+          artifactNumToKeepStr('')
+        }
+      }
+    }
+
+    parameters {
+      parameterDefinitions {
+        textParam {
+          name('sha1')
+          defaultValue('jenkins-pipeline')
+          description('commit id you want to build or refname')
+        }
+      }
+    }
+
+    pipelineTriggers {
+      triggers {
+        cron {
+          spec('@daily')
+        }
+        ghprbTrigger {
+          adminlist('')
+          whitelist('')
+          orgslist('LibreELEC')
+          cron('')
+          triggerPhrase('@TRIGGER_PHRASE@')
+          onlyTriggerPhrase(true)
+          useGitHubHooks(true)
+          permitAll(false)
+          autoCloseFailedPullRequests(false)
+          displayBuildErrorsOnDownstreamBuilds(false)
+          commentFilePath('')
+          skipBuildPhrase('')
+          blackListCommitAuthor('')
+
+          whiteListTargetBranches {
+            ghprbBranch {
+              branch('jenkins-pipeline')
+            }
+          }
+
+          blackListTargetBranches {
+            ghprbBranch {
+              branch('')
+            }
+          }
+
+          allowMembersOfWhitelistedOrgsAsAdmin(true)
+          msgSuccess('')
+          msgFailure('')
+          commitStatusContext('')
+          gitHubAuthId('39e5660a-324d-44bf-9570-be764690f4c1')
+          buildDescTemplate('')
+          blackListLabels('')
+          whiteListLabels('')
+
+          extensions {
+            ghprbSimpleStatus {
+              showMatrixStatus(false)
+              commitStatusContext('')
+              statusUrl('')
+              triggeredStatus('Pending build...')
+              startedStatus('Found some time, building it now.')
+              addTestResults(false)
+
+              completedStatus {
+                ghprbBuildResultMessage {
+                  result('SUCCESS')
+                  message('All good. Have a cookie.')
+                }
+                ghprbBuildResultMessage {
+                  result('FAILURE')
+                  message('Sorry, building this PR failed. Please check the logs for the errors.')
+                }
+              }
+            }
+          }
+
+          includedRegions('')
+          excludedRegions('')
+        }
+      }
+    }
+  }
+
+  definition {
+    cpsScm {
+      scm {
+        git {
+          remote {
+            github('lrusak/LibreELEC.tv')
+            refspec('+refs/heads/*:refs/remotes/origin/* +refs/pull/${ghprbPullId}/*:refs/remotes/origin/pr/${ghprbPullId}/*')
+          }
+          branch('${sha1}')
+        }
+      }
+      scriptPath('tools/jenkins/pipelines/buildImages.groovy')
+    }
+  }
+}

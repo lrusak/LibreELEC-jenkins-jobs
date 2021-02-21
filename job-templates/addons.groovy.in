@@ -1,0 +1,71 @@
+pipelineJob('@NAME@-Add-ons') {
+
+  description('@NAME@ Add-on Build Job')
+
+  disabled(false)
+
+  environmentVariables {
+    env('PROJECT', '@PROJECT@')
+    env('DEVICE', '@DEVICE@')
+    env('ARCH', '@ARCH@')
+  }
+
+  properties {
+
+    disableConcurrentBuilds()
+
+    rebuild {
+      autoRebuild(true)
+      rebuildDisabled(false)
+    }
+
+    buildDiscarder {
+      strategy {
+        logRotator {
+          daysToKeepStr('7')
+          numToKeepStr('7')
+          artifactDaysToKeepStr('')
+          artifactNumToKeepStr('')
+        }
+      }
+    }
+
+    parameters {
+      parameterDefinitions {
+        textParam {
+          name('sha1')
+          defaultValue('jenkins-pipeline')
+          description('commit id you want to build or refname')
+        }
+        choiceParam {
+          name('ADDONS_TO_BUILD')
+          description('Which add-ons to build:\nall = all add-ons, kodi binary and LE Official\nofficial = LE official add-ons\nbinary = Kodi binary add-ons')
+          choices(['all', 'official', 'binary'])
+        }
+      }
+    }
+
+    pipelineTriggers {
+      triggers {
+        cron {
+          spec('@weekly')
+        }
+      }
+    }
+  }
+
+  definition {
+    cpsScm {
+      scm {
+        git {
+          remote {
+            github('lrusak/LibreELEC.tv')
+            refspec('+refs/heads/*:refs/remotes/origin/* +refs/pull/${ghprbPullId}/*:refs/remotes/origin/pr/${ghprbPullId}/*')
+          }
+          branch('${sha1}')
+        }
+      }
+      scriptPath('tools/jenkins/pipelines/buildAddons.groovy')
+    }
+  }
+}
