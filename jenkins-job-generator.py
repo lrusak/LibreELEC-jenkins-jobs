@@ -47,6 +47,10 @@ class JobGenerator(object):
                 # assume and project with "devices" folder uses arm arch
                 definition["arch"] = "arm"
 
+                # it would sure be nice to have a build matrix
+                if project == "Generic":
+                    definition["arch"] = "x86_64"
+
                 definition["devices"] = []
                 for device in os.listdir(
                     os.path.join(self.libreelec_dir, "projects", project, "devices")
